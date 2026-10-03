@@ -1,0 +1,76 @@
+# KOHA config
+#
+# Edit this file to change your menu. KOHA only reads it when it starts.
+# The active color theme and hidden items are stored separately in state.toml
+# (written by KOHA itself, so you never have to edit it).
+
+version = 1
+
+# Every menu entry needs:
+#   id     unique name made of a-z, 0-9, "_" and "-"; used to remember ON/OFF state
+#   label  the text shown in the menu
+#   type   one of: builtin, url, exec, submenu
+#
+# A "Menu Settings" row is always added automatically as the last row.
+
+# Opens the theme picker. Selecting a theme applies it immediately.
+[[menu]]
+id = "color-scheme"
+label = "Color Scheme"
+type = "builtin"
+name = "theme_picker"
+
+# Open a link in the default browser.
+[[menu]]
+id = "links"
+label = "Links"
+type = "submenu"
+
+  [[menu.items]]
+  id = "github"
+  label = "GitHub"
+  type = "url"
+  url = "https://github.com"
+
+# Builtins: lock, sleep, close_all_windows, theme_picker.
+[[menu]]
+id = "lock"
+label = "Lock"
+type = "builtin"
+name = "lock"
+
+[[menu]]
+id = "sleep"
+label = "Sleep"
+type = "builtin"
+name = "sleep"
+
+[[menu]]
+id = "close-all-windows"
+label = "Close All Windows"
+type = "builtin"
+name = "close_all_windows"
+
+# Run any program. "args" and "admin" are optional (admin asks for elevation).
+# Uncomment and adjust to try it:
+#
+# [[menu]]
+# id = "terminal-admin"
+# label = "Terminal (Admin)"
+# type = "exec"
+# command = "wt.exe"
+# args = []
+# admin = true
+
+# Add your own color theme, or reuse a built-in name to override it.
+# Built-in themes: game_boy, amber, green_term, catppuccin-mocha, gruvbox,
+# vague, tokyonight. "font" is optional.
+#
+# [[themes]]
+# name = "my-theme"
+# bg = "#101010"
+# fg = "#E0E0E0"
+# sel_bg = "#E0E0E0"
+# sel_fg = "#101010"
+# bezel = "#000000"
+# font = "mono"

@@ -54,7 +54,7 @@ enum Overlay {
     MenuSettings,
 }
 
-/// Apa yang terjadi saat sebuar baris dipilih dengan `Enter`. Dengan menyimpan
+/// Apa yang terjadi saat sebuah baris dipilih dengan `Enter`. Dengan menyimpan
 /// target di samping label, kita tidak pernah mencocokkan teks label (yang
 /// dinamis: "(ON)", "(current)") untuk tahu baris mana yang dipilih.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -742,6 +742,18 @@ type = "submenu"
         open_picker(&mut menu);
         assert_eq!(menu.update(Input::Dismiss), Effect::Close);
         assert!(menu.is_closed());
+    }
+
+    #[test]
+    fn default_config_menu_is_navigable() {
+        use crate::config::DEFAULT_CONFIG;
+        let mut menu = menu_with(DEFAULT_CONFIG, State::default());
+        assert_eq!(labels(&menu).first().unwrap(), "Color Scheme");
+        assert_eq!(labels(&menu).last().unwrap(), MENU_SETTINGS_LABEL);
+        send(&mut menu, &[Input::Enter]); // pemilih tema
+        assert_eq!(labels(&menu).len(), 7);
+        send(&mut menu, &[Input::Back, Input::Down, Input::Enter]); // Links
+        assert_eq!(labels(&menu), ["GitHub"]);
     }
 
     #[test]

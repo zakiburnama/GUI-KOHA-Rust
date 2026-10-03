@@ -20,6 +20,11 @@ use crate::theme::{FONT_MONO, Theme, ThemeSet};
 /// Versi format config yang dipahami kode ini.
 pub const CONFIG_VERSION: u32 = 1;
 
+/// Config contoh yang ditulis oleh `koha --init`. `include_str!` menyalin isi
+/// file ke dalam binary saat kompilasi, jadi tidak ada file yang dibaca saat
+/// jalan. Test di bawah menjamin isinya selalu valid.
+pub const DEFAULT_CONFIG: &str = include_str!("default_config.toml");
+
 /// Config yang sudah lolos validasi.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Config {
@@ -711,6 +716,60 @@ type = "submenu"
         assert_eq!(path, "menu[0]");
         assert!(message.contains("\"url\""), "{message}");
         assert!(message.contains("exec"), "{message}");
+    }
+
+    // ---- config contoh ----
+
+    #[test]
+    fn default_config_is_valid() {
+        let config = parse(DEFAULT_CONFIG).unwrap();
+        assert_eq!(config.themes, ThemeSet::builtin());
+        assert!(!config.menu.is_empty());
+    }
+
+    #[test]
+    fn default_config_offers_theme_picker_and_the_three_system_builtins() {
+        let config = parse(DEFAULT_CONFIG).unwrap();
+        let builtins: Vec<Builtin> = config
+            .menu
+            .iter()
+            .filter_map(|item| match item.kind {
+                ItemKind::Action(Action::Builtin(builtin)) => Some(builtin),
+                _ => None,
+            })
+            .collect();
+        for expected in [
+            Builtin::ThemePicker,
+            Builtin::Lock,
+            Builtin::Sleep,
+            Builtin::CloseAllWindows,
+        ] {
+            assert!(builtins.contains(&expected), "{expected:?} hilang");
+        }
+    }
+
+    #[test]
+    fn default_config_has_no_personal_paths() {
+        for needle in ["PERSONAL", "ThinkPad", "Users\\", "AppData", "Obsidian"] {
+            assert!(!DEFAULT_CONFIG.contains(needle), "{needle}");
+        }
+    }
+
+    #[test]
+    fn default_config_commented_examples_are_valid_when_uncommented() {
+        // Menghapus "# " di depan blok contoh harus menghasilkan config valid,
+        // supaya contoh di komentar tidak membusuk.
+        let uncommented: String = DEFAULT_CONFIG
+            .lines()
+            .map(|line| match line.strip_prefix("# ") {
+                Some(rest) if rest.starts_with("[[") || rest.contains(" = ") => rest,
+                _ => line,
+            })
+            .collect::<Vec<_>>()
+            .join("\n");
+        let config = parse(&uncommented).unwrap();
+        assert!(config.menu.iter().any(|item| item.id == "terminal-admin"));
+        assert!(config.themes.get("my-theme").is_some());
     }
 
     const THEME_BODY: &str =
