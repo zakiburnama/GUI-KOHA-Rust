@@ -7,3 +7,4 @@ publish.workspace = true
 
 [dependencies]
 koha-core.workspace = true
+winit = "0.30.13"
