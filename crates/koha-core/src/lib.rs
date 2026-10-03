@@ -1,10 +1,12 @@
 //! Logika murni KOHA. Crate ini tidak boleh memanggil API OS maupun GUI.
 
 pub mod config;
+pub mod menu;
 pub mod rgb;
 pub mod theme;
 
 pub use config::{Action, Builtin, Config, ConfigError, ItemKind, MenuItem};
+pub use menu::{Effect, Input, MenuState, Row};
 pub use rgb::{ParseRgbError, Rgb};
 pub use theme::{DEFAULT_THEME, Theme, ThemeSet};
 
