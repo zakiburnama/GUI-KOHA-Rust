@@ -14,3 +14,4 @@ path = "src/main.rs"
 koha-core.workspace = true
 koha-platform.workspace = true
 koha-gui.workspace = true
+anyhow = "1.0.104"
