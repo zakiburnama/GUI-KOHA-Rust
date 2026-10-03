@@ -1,0 +1,15 @@
+[workspace]
+resolver = "3"
+members = ["crates/*"]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2024"
+publish = false
+
+[workspace.dependencies]
+# Crate internal. Dengan [workspace.dependencies], versi/path dideklarasikan sekali
+# di sini dan crate lain cukup menulis `koha-core.workspace = true`.
+koha-core = { path = "crates/koha-core" }
+koha-platform = { path = "crates/koha-platform" }
+koha-gui = { path = "crates/koha-gui" }

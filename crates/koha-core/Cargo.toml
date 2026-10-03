@@ -1,0 +1,6 @@
+[package]
+name = "koha-core"
+description = "Logika murni KOHA: config, menu, tema. Tanpa panggilan OS dan tanpa GUI."
+version.workspace = true
+edition.workspace = true
+publish.workspace = true

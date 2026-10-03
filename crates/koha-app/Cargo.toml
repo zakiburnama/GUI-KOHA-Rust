@@ -1,0 +1,16 @@
+[package]
+name = "koha-app"
+description = "Binary `koha`: merangkai core, platform, dan gui."
+version.workspace = true
+edition.workspace = true
+publish.workspace = true
+
+# Nama paket `koha-app`, tetapi file hasil build-nya `koha` / `koha.exe`.
+[[bin]]
+name = "koha"
+path = "src/main.rs"
+
+[dependencies]
+koha-core.workspace = true
+koha-platform.workspace = true
+koha-gui.workspace = true

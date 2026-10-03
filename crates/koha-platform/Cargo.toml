@@ -1,0 +1,9 @@
+[package]
+name = "koha-platform"
+description = "Trait Platform dan implementasi per OS."
+version.workspace = true
+edition.workspace = true
+publish.workspace = true
+
+[dependencies]
+koha-core.workspace = true
