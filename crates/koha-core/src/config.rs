@@ -103,14 +103,14 @@ pub enum ConfigError {
 }
 
 impl ConfigError {
-    fn invalid(path: &str, message: impl Into<String>) -> Self {
+    pub(crate) fn invalid(path: &str, message: impl Into<String>) -> Self {
         Self::Invalid {
             path: path.to_owned(),
             message: message.into(),
         }
     }
 
-    fn from_toml(err: &toml::de::Error, source: &str) -> Self {
+    pub(crate) fn from_toml(err: &toml::de::Error, source: &str) -> Self {
         let message = err.message().to_owned();
         match err.span() {
             Some(span) => {
