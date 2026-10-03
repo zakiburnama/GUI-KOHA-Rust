@@ -64,7 +64,8 @@ name = "close_all_windows"
 
 # Add your own color theme, or reuse a built-in name to override it.
 # Built-in themes: game_boy, amber, green_term, catppuccin-mocha, gruvbox,
-# vague, tokyonight. "font" is optional.
+# vague, tokyonight. "font" is optional; built-in fonts: press-start-2p, vt323,
+# ibm-plex-mono (default).
 #
 # [[themes]]
 # name = "my-theme"
@@ -73,4 +74,4 @@ name = "close_all_windows"
 # sel_bg = "#E0E0E0"
 # sel_fg = "#101010"
 # bezel = "#000000"
-# font = "mono"
+# font = "ibm-plex-mono"

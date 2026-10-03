@@ -6,6 +6,7 @@ edition.workspace = true
 publish.workspace = true
 
 [dependencies]
+fontdue = "0.9.4"
 koha-core.workspace = true
 softbuffer = "0.4.8"
 thiserror = "2.0.21"

@@ -5,15 +5,18 @@ use crate::rgb::Rgb;
 /// Nama tema yang dipakai bila tema yang diminta tidak ada.
 pub const DEFAULT_THEME: &str = "amber";
 
-/// Identitas font bergaya retro (pixel/bitmap).
-pub const FONT_RETRO: &str = "retro";
-/// Identitas font monospace biasa.
-pub const FONT_MONO: &str = "mono";
+/// Identitas font. Berkas font sebenarnya dimiliki `koha-gui`; core hanya
+/// mengenal namanya. Id yang tidak dikenal GUI jatuh ke [`DEFAULT_FONT`].
+pub const FONT_PRESS_START_2P: &str = "press-start-2p";
+pub const FONT_VT323: &str = "vt323";
+pub const FONT_IBM_PLEX_MONO: &str = "ibm-plex-mono";
+/// Font untuk tema custom yang tidak menyebut `font`, dan fallback bila id tak dikenal.
+pub const DEFAULT_FONT: &str = FONT_IBM_PLEX_MONO;
 
 /// Satu tema. Setiap tema membawa font-nya sendiri.
 ///
 /// `font` hanya nama identitas; file font yang sebenarnya dipilih dan dimuat
-/// oleh `koha-gui` (langkah 5). Core tidak tahu apa-apa soal berkas font.
+/// oleh `koha-gui`. Core tidak tahu apa-apa soal berkas font.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Theme {
     pub name: String,
@@ -55,7 +58,7 @@ const BUILTIN: [Builtin; 7] = [
         sel_bg: 0x0F380F,
         sel_fg: 0x9BBC0F,
         bezel: 0x0F380F,
-        font: FONT_RETRO,
+        font: FONT_PRESS_START_2P,
     },
     Builtin {
         name: "amber",
@@ -64,7 +67,7 @@ const BUILTIN: [Builtin; 7] = [
         sel_bg: 0xFFB000,
         sel_fg: 0x1A0F00,
         bezel: 0xFFB000,
-        font: FONT_RETRO,
+        font: FONT_VT323,
     },
     Builtin {
         name: "green_term",
@@ -73,7 +76,7 @@ const BUILTIN: [Builtin; 7] = [
         sel_bg: 0x33FF33,
         sel_fg: 0x0A0A0A,
         bezel: 0x33FF33,
-        font: FONT_RETRO,
+        font: FONT_VT323,
     },
     Builtin {
         name: "catppuccin-mocha",
@@ -82,7 +85,7 @@ const BUILTIN: [Builtin; 7] = [
         sel_bg: 0xCBA6F7,
         sel_fg: 0x1E1E2E,
         bezel: 0x11111B,
-        font: FONT_MONO,
+        font: FONT_IBM_PLEX_MONO,
     },
     Builtin {
         name: "gruvbox",
@@ -91,7 +94,7 @@ const BUILTIN: [Builtin; 7] = [
         sel_bg: 0xFE8019,
         sel_fg: 0x282828,
         bezel: 0x1D2021,
-        font: FONT_MONO,
+        font: FONT_IBM_PLEX_MONO,
     },
     Builtin {
         name: "vague",
@@ -100,7 +103,7 @@ const BUILTIN: [Builtin; 7] = [
         sel_bg: 0x6E94B2,
         sel_fg: 0x141415,
         bezel: 0x1C1C24,
-        font: FONT_MONO,
+        font: FONT_IBM_PLEX_MONO,
     },
     Builtin {
         name: "tokyonight",
@@ -109,7 +112,7 @@ const BUILTIN: [Builtin; 7] = [
         sel_bg: 0x7AA2F7,
         sel_fg: 0x1A1B26,
         bezel: 0x0C0E14,
-        font: FONT_MONO,
+        font: FONT_IBM_PLEX_MONO,
     },
 ];
 
@@ -221,12 +224,15 @@ mod tests {
     }
 
     #[test]
-    fn retro_themes_use_retro_font() {
+    fn each_theme_has_its_own_font() {
         let set = ThemeSet::builtin();
-        for name in ["game_boy", "amber", "green_term"] {
-            assert_eq!(set.get(name).unwrap().font, FONT_RETRO, "{name}");
+        assert_eq!(set.get("game_boy").unwrap().font, FONT_PRESS_START_2P);
+        for name in ["amber", "green_term"] {
+            assert_eq!(set.get(name).unwrap().font, FONT_VT323, "{name}");
         }
-        assert_eq!(set.get("gruvbox").unwrap().font, FONT_MONO);
+        for name in ["catppuccin-mocha", "gruvbox", "vague", "tokyonight"] {
+            assert_eq!(set.get(name).unwrap().font, FONT_IBM_PLEX_MONO, "{name}");
+        }
     }
 
     #[test]

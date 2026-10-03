@@ -15,7 +15,7 @@ use serde::Deserialize;
 use thiserror::Error;
 
 use crate::rgb::Rgb;
-use crate::theme::{FONT_MONO, Theme, ThemeSet};
+use crate::theme::{DEFAULT_FONT, Theme, ThemeSet};
 
 /// Versi format config yang dipahami kode ini.
 pub const CONFIG_VERSION: u32 = 1;
@@ -384,7 +384,7 @@ fn convert_themes(raw: &[RawTheme]) -> Result<ThemeSet, ConfigError> {
             ));
         }
         let font = match theme.font.as_deref().map(str::trim) {
-            None => FONT_MONO.to_owned(),
+            None => DEFAULT_FONT.to_owned(),
             Some("") => return Err(ConfigError::invalid(&path, "font tidak boleh kosong")),
             Some(font) => font.to_owned(),
         };
@@ -788,19 +788,19 @@ type = "submenu"
         assert_eq!(config.themes.len(), 8);
         let mine = config.themes.get("mine").unwrap();
         assert_eq!(mine.bg, Rgb::new(0x10, 0x10, 0x10));
-        assert_eq!(mine.font, FONT_MONO);
+        assert_eq!(mine.font, DEFAULT_FONT);
     }
 
     #[test]
     fn custom_theme_can_override_builtin_in_place() {
         let source = with_themes(&format!(
-            "[[themes]]\nname = \"gruvbox\"\nbg = \"#010203\"\nfont = \"retro\"\n{THEME_BODY}"
+            "[[themes]]\nname = \"gruvbox\"\nbg = \"#010203\"\nfont = \"vt323\"\n{THEME_BODY}"
         ));
         let config = parse(&source).unwrap();
         assert_eq!(config.themes.len(), 7);
         let gruvbox = config.themes.get("gruvbox").unwrap();
         assert_eq!(gruvbox.bg, Rgb::new(1, 2, 3));
-        assert_eq!(gruvbox.font, "retro");
+        assert_eq!(gruvbox.font, "vt323");
         assert_eq!(config.themes.iter().nth(4).unwrap().name, "gruvbox");
     }
 

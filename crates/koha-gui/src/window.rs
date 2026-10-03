@@ -1,9 +1,9 @@
 //! Jendela popup: `winit` untuk jendela dan event, `softbuffer` untuk
-//! menampilkan buffer piksel hasil [`render`](crate::render::render).
+//! menampilkan buffer piksel hasil [`render()`](crate::render::render).
 //!
 //! Bagian ini tipis dengan sengaja. Keputusan tentang menu ada di `koha-core`,
 //! tata letak dan piksel ada di [`layout`](crate::layout) dan
-//! [`render`](crate::render), pemetaan tombol ada di [`input`](crate::input);
+//! [`render`](mod@crate::render), pemetaan tombol ada di [`input`](crate::input);
 //! semuanya bisa dites tanpa jendela. Yang tersisa di sini hanya perekat.
 
 use std::num::NonZeroU32;

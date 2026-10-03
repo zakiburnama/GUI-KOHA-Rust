@@ -319,7 +319,7 @@ impl MenuState {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::theme::FONT_MONO;
+    use crate::theme::FONT_IBM_PLEX_MONO;
 
     /// root: Docs, Tools >(Sleep, More >(Close All)), Terminal, Colors(theme_picker)
     /// + baris otomatis "Menu Settings".
@@ -687,7 +687,7 @@ type = "submenu"
         assert_eq!(menu.update(Input::Enter), Effect::StateChanged);
 
         assert_eq!(menu.theme().name, "gruvbox");
-        assert_eq!(menu.theme().font, FONT_MONO);
+        assert_eq!(menu.theme().font, FONT_IBM_PLEX_MONO);
         assert_eq!(menu.state().theme.as_deref(), Some("gruvbox"));
         assert_eq!(labels(&menu)[4], "gruvbox (current)");
         assert_eq!(labels(&menu)[1], "amber");
@@ -759,7 +759,7 @@ type = "submenu"
     #[test]
     fn custom_theme_from_config_appears_in_picker() {
         let source = format!(
-            "{FIXTURE}\n[[themes]]\nname = \"mine\"\nbg = \"#101010\"\nfg = \"#FFFFFF\"\nsel_bg = \"#FFFFFF\"\nsel_fg = \"#101010\"\nbezel = \"#000000\"\nfont = \"retro\"\n"
+            "{FIXTURE}\n[[themes]]\nname = \"mine\"\nbg = \"#101010\"\nfg = \"#FFFFFF\"\nsel_bg = \"#FFFFFF\"\nsel_fg = \"#101010\"\nbezel = \"#000000\"\nfont = \"vt323\"\n"
         );
         let mut menu = menu_with(&source, State::default());
         open_picker(&mut menu);
