@@ -424,6 +424,75 @@ mod tests {
         }
     }
 
+    // ---- snapshot ASCII ----
+
+    /// Menggambar `text` putih di atas hitam pada skala 1.0, memangkas ke kotak
+    /// batas tinta, lalu mengubahnya menjadi seni ASCII ('#' = cakupan >= 50%).
+    fn ascii_art(font_id: &str, text: &str) -> String {
+        let mut r = renderer(font_id, 1.0);
+        let (w, h) = (r.measure(text) + 8, (r.pixel_size() * 2.0).ceil() as u32);
+        let baseline = r.baseline(Rect { x: 0, y: 0, w, h });
+        let buffer = draw_full(&mut r, w, h, 4, baseline, text);
+
+        let ink = |x: u32, y: u32| buffer[(y * w + x) as usize] & 0xFF >= 0x80;
+        let any = |x: u32, y: u32| buffer[(y * w + x) as usize] != BG;
+        let rows: Vec<u32> = (0..h).filter(|&y| (0..w).any(|x| any(x, y))).collect();
+        let cols: Vec<u32> = (0..w).filter(|&x| (0..h).any(|y| any(x, y))).collect();
+        let (top, bottom) = (rows[0], *rows.last().unwrap());
+        let (left, right) = (cols[0], *cols.last().unwrap());
+        (top..=bottom)
+            .map(|y| {
+                (left..=right)
+                    .map(|x| if ink(x, y) { '#' } else { '.' })
+                    .collect::<String>()
+            })
+            .collect::<Vec<_>>()
+            .join("\n")
+    }
+
+    /// Membandingkan dengan berkas di `tests/snapshots/`. Jalankan dengan
+    /// `UPDATE_SNAPSHOTS=1` untuk menulis ulang berkas acuan setelah perubahan
+    /// yang disengaja (misalnya `fontdue` atau font berganti versi).
+    fn assert_snapshot(name: &str, actual: &str) {
+        let dir = concat!(env!("CARGO_MANIFEST_DIR"), "/tests/snapshots");
+        let path = format!("{dir}/{name}.txt");
+        if std::env::var_os("UPDATE_SNAPSHOTS").is_some() {
+            std::fs::create_dir_all(dir).unwrap();
+            std::fs::write(&path, format!("{actual}\n")).unwrap();
+            return;
+        }
+        let expected = std::fs::read_to_string(&path).unwrap_or_else(|_| {
+            panic!("snapshot {path} belum ada; jalankan sekali dengan UPDATE_SNAPSHOTS=1")
+        });
+        // Git di Windows bisa mengubah akhir baris menjadi CRLF.
+        assert_eq!(
+            expected.replace("\r\n", "\n").trim_end(),
+            actual.trim_end(),
+            "snapshot {name} berubah"
+        );
+    }
+
+    #[test]
+    fn snapshot_press_start_2p() {
+        assert_snapshot(
+            "press-start-2p",
+            &ascii_art(FONT_PRESS_START_2P, "> Sleep gy"),
+        );
+    }
+
+    #[test]
+    fn snapshot_vt323() {
+        assert_snapshot("vt323", &ascii_art(FONT_VT323, "> Sleep gy"));
+    }
+
+    #[test]
+    fn snapshot_ibm_plex_mono() {
+        assert_snapshot(
+            "ibm-plex-mono",
+            &ascii_art(FONT_IBM_PLEX_MONO, "> Sleep gy"),
+        );
+    }
+
     #[test]
     fn baseline_is_inside_the_row() {
         for id in [FONT_PRESS_START_2P, FONT_VT323, FONT_IBM_PLEX_MONO] {

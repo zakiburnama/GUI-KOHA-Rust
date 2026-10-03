@@ -9,6 +9,8 @@ pub const WIDTH: f64 = 300.0;
 pub const ROW_HEIGHT: f64 = 26.0;
 /// Jarak bezel di sekeliling daftar baris (piksel logis).
 pub const MARGIN: f64 = 6.0;
+/// Jarak teks dari tepi kiri/kanan baris (piksel logis).
+pub const TEXT_PAD: f64 = 8.0;
 
 /// Persegi panjang dalam piksel fisik.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -25,16 +27,29 @@ pub struct Layout {
     pub width: u32,
     pub height: u32,
     pub rows: Vec<Rect>,
+    /// Jarak teks dari tepi kiri baris, dalam piksel fisik.
+    pub text_pad: u32,
 }
 
 impl Layout {
-    /// Menghitung tata letak untuk `row_count` baris pada skala `scale`
-    /// (1.0 = 100%, 1.5 = 150%).
-    ///
+    /// Tata letak selebar minimum ([`WIDTH`]) untuk `row_count` baris pada skala
+    /// `scale` (1.0 = 100%, 1.5 = 150%).
+    pub fn new(row_count: usize, scale: f64) -> Self {
+        Self::build(row_count, scale, 0, u32::MAX)
+    }
+
+    /// Seperti [`new`](Self::new), tetapi jendela melebar bila teks terpanjang
+    /// (`text_width`, piksel fisik) tidak muat di lebar minimum. Lebar tidak
+    /// pernah melebihi `max_width` (misalnya 90% lebar monitor), kecuali lebar
+    /// minimum sendiri yang lebih besar dari itu.
+    pub fn fitting(row_count: usize, scale: f64, text_width: u32, max_width: u32) -> Self {
+        Self::build(row_count, scale, text_width, max_width)
+    }
+
     /// Setiap tepi dibulatkan sendiri-sendiri (bukan "posisi + tinggi"), supaya
     /// baris yang bersebelahan selalu rapat tanpa celah satu piksel pun pada
     /// skala pecahan.
-    pub fn new(row_count: usize, scale: f64) -> Self {
+    fn build(row_count: usize, scale: f64, text_width: u32, max_width: u32) -> Self {
         let scale = if scale.is_finite() && scale > 0.0 {
             scale
         } else {
@@ -43,7 +58,12 @@ impl Layout {
         let px = |logical: f64| (logical * scale).round() as u32;
 
         let x = px(MARGIN);
-        let w = px(WIDTH - MARGIN) - x;
+        let text_pad = px(TEXT_PAD);
+        let min_width = px(WIDTH);
+        let wanted = text_width.saturating_add(2 * (x + text_pad));
+        let width = wanted.max(min_width).min(max_width.max(min_width));
+
+        let row_width = width - 2 * x; // bezel kiri dan kanan sama lebar
         let rows = (0..row_count)
             .map(|i| {
                 let top = px(MARGIN + i as f64 * ROW_HEIGHT);
@@ -51,16 +71,17 @@ impl Layout {
                 Rect {
                     x,
                     y: top,
-                    w,
+                    w: row_width,
                     h: bottom - top,
                 }
             })
             .collect();
 
         Self {
-            width: px(WIDTH),
+            width,
             height: px(MARGIN * 2.0 + row_count as f64 * ROW_HEIGHT),
             rows,
+            text_pad,
         }
     }
 }
@@ -155,6 +176,65 @@ mod tests {
         let layout = Layout::new(0, 1.0);
         assert!(layout.rows.is_empty());
         assert_eq!(layout.height, 12);
+    }
+
+    #[test]
+    fn bezel_is_equally_wide_on_both_sides() {
+        for scale in [1.0, 1.25, 1.5, 2.0] {
+            let layout = Layout::new(2, scale);
+            let row = layout.rows[0];
+            assert_eq!(row.x, layout.width - (row.x + row.w), "scale {scale}");
+        }
+    }
+
+    #[test]
+    fn text_pad_scales_with_dpi() {
+        assert_eq!(Layout::new(1, 1.0).text_pad, 8);
+        assert_eq!(Layout::new(1, 2.0).text_pad, 16);
+    }
+
+    #[test]
+    fn fitting_keeps_the_minimum_width_for_short_text() {
+        let layout = Layout::fitting(3, 1.0, 100, u32::MAX);
+        assert_eq!(layout.width, 300);
+        assert_eq!(layout, Layout::new(3, 1.0));
+    }
+
+    #[test]
+    fn fitting_grows_to_hold_long_text_with_padding_on_both_sides() {
+        // 400 px teks + (bezel 6 + pad 8) di kiri dan kanan.
+        let layout = Layout::fitting(3, 1.0, 400, u32::MAX);
+        assert_eq!(layout.width, 400 + 2 * (6 + 8));
+        let row = layout.rows[0];
+        assert!(row.w >= 400 + 2 * 8);
+    }
+
+    #[test]
+    fn fitting_is_capped_by_max_width() {
+        let layout = Layout::fitting(3, 1.0, 5000, 700);
+        assert_eq!(layout.width, 700);
+    }
+
+    #[test]
+    fn minimum_width_wins_over_a_smaller_cap() {
+        let layout = Layout::fitting(3, 1.0, 5000, 100);
+        assert_eq!(layout.width, 300);
+    }
+
+    #[test]
+    fn fitting_rows_stay_inside_the_window() {
+        for scale in [1.0, 1.25, 1.5] {
+            let layout = Layout::fitting(4, scale, 777, u32::MAX);
+            for row in &layout.rows {
+                assert!(row.x + row.w < layout.width, "scale {scale}");
+            }
+        }
+    }
+
+    #[test]
+    fn huge_text_width_does_not_overflow() {
+        let layout = Layout::fitting(1, 2.0, u32::MAX, u32::MAX);
+        assert!(layout.width >= 600);
     }
 
     #[test]

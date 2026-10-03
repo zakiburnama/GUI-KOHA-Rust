@@ -22,7 +22,8 @@ use winit::window::{Window, WindowId, WindowLevel};
 
 use crate::input::{FocusGate, KeyAction, map_key};
 use crate::layout::{Layout, centered_position};
-use crate::render::render;
+use crate::render::{render, widest_row};
+use crate::text::{TextError, TextRenderer};
 
 #[derive(Debug, Error)]
 pub enum GuiError {
@@ -30,6 +31,8 @@ pub enum GuiError {
     EventLoop(#[from] EventLoopError),
     #[error("tidak bisa membuat jendela: {0}")]
     Window(#[from] OsError),
+    #[error("{0}")]
+    Font(#[from] TextError),
     /// Hanya menyimpan pesannya: `SoftBufferError` berisi pointer mentah dan
     /// bukan `Send + Sync`, sehingga tidak bisa dibungkus `anyhow::Error`.
     #[error("gagal menggambar jendela: {0}")]
@@ -78,6 +81,27 @@ pub fn run(menu: MenuState, on_state: &mut dyn FnMut(&State)) -> Result<Option<A
     Ok(outcome)
 }
 
+/// Tata letak untuk keadaan menu saat ini. Font `text` disamakan dengan font
+/// tema aktif lebih dulu, karena lebar jendela bergantung pada font itu.
+fn compute_layout(
+    menu: &MenuState,
+    text: &mut TextRenderer,
+    scale: f64,
+    monitor: Option<&MonitorHandle>,
+) -> Result<Layout, GuiError> {
+    text.set_scale(scale);
+    text.set_font(&menu.theme().font)?;
+    let rows = menu.rows();
+    // Lebar jendela dibatasi 90% lebar monitor.
+    let max_width = monitor.map_or(u32::MAX, |m| m.size().width / 10 * 9);
+    Ok(Layout::fitting(
+        rows.len(),
+        scale,
+        widest_row(text, &rows),
+        max_width,
+    ))
+}
+
 /// Segala sesuatu yang hanya ada selama jendela ada.
 struct Gfx {
     // Urutan field = urutan drop: surface dulu, baru context dan window.
@@ -86,6 +110,7 @@ struct Gfx {
     window: Rc<Window>,
     monitor: Option<MonitorHandle>,
     layout: Layout,
+    text: TextRenderer,
 }
 
 struct App<'a> {
@@ -104,7 +129,8 @@ impl App<'_> {
             .primary_monitor()
             .or_else(|| event_loop.available_monitors().next());
         let scale = monitor.as_ref().map_or(1.0, MonitorHandle::scale_factor);
-        let layout = Layout::new(self.menu.rows().len(), scale);
+        let mut text = TextRenderer::new(&self.menu.theme().font, scale)?;
+        let layout = compute_layout(&self.menu, &mut text, scale, monitor.as_ref())?;
 
         // Dibuat tak terlihat: posisi dan ukuran dibereskan dulu, baru tampil.
         // Ini menghindari jendela muncul sebentar di tempat yang salah (masalah
@@ -132,40 +158,54 @@ impl App<'_> {
             window,
             monitor,
             layout,
+            text,
         };
-        // Skala jendela sebenarnya bisa berbeda dari skala monitor utama.
-        self.fit(&mut gfx);
+        // Skala jendela sebenarnya bisa berbeda dari skala monitor utama, dan
+        // posisi awal harus ditetapkan: `force` memaksa keduanya.
+        self.fit(&mut gfx, true)?;
         gfx.window.set_visible(true);
         gfx.window.focus_window();
         gfx.window.request_redraw();
         Ok(gfx)
     }
 
-    /// Menghitung ulang ukuran dari jumlah baris dan skala, lalu menengahkan.
-    fn fit(&self, gfx: &mut Gfx) {
-        let layout = Layout::new(self.menu.rows().len(), gfx.window.scale_factor());
-        let size = PhysicalSize::new(layout.width, layout.height);
-        // Hasil `request_inner_size` diabaikan: ukuran sebenarnya dibaca lagi
-        // lewat `inner_size()` saat menggambar.
-        let _ = gfx.window.request_inner_size(size);
-        if let Some(monitor) = &gfx.monitor {
-            let (x, y) = centered_position(
-                (monitor.position().x, monitor.position().y),
-                (monitor.size().width, monitor.size().height),
-                (layout.width, layout.height),
-            );
-            gfx.window.set_outer_position(PhysicalPosition::new(x, y));
+    /// Menghitung ulang tata letak (jumlah baris, teks terpanjang, skala, font
+    /// tema aktif). Ukuran dan posisi jendela hanya disentuh bila ukurannya
+    /// berubah atau `force`, supaya jendela tidak bergeser tanpa perlu.
+    fn fit(&self, gfx: &mut Gfx, force: bool) -> Result<(), GuiError> {
+        let layout = compute_layout(
+            &self.menu,
+            &mut gfx.text,
+            gfx.window.scale_factor(),
+            gfx.monitor.as_ref(),
+        )?;
+        let resized = (layout.width, layout.height) != (gfx.layout.width, gfx.layout.height);
+        if force || resized {
+            // Hasil `request_inner_size` diabaikan: ukuran sebenarnya dibaca lagi
+            // lewat `inner_size()` saat menggambar.
+            let _ = gfx
+                .window
+                .request_inner_size(PhysicalSize::new(layout.width, layout.height));
+            if let Some(monitor) = &gfx.monitor {
+                let (x, y) = centered_position(
+                    (monitor.position().x, monitor.position().y),
+                    (monitor.size().width, monitor.size().height),
+                    (layout.width, layout.height),
+                );
+                gfx.window.set_outer_position(PhysicalPosition::new(x, y));
+            }
         }
         gfx.layout = layout;
+        Ok(())
     }
 
     fn apply(&mut self, input: Input, event_loop: &ActiveEventLoop) {
         match self.menu.update(input) {
             Effect::None => {}
-            Effect::Redraw => self.changed(),
+            Effect::Redraw => self.refresh(event_loop),
             Effect::StateChanged => {
                 (self.on_state)(self.menu.state());
-                self.changed();
+                self.refresh(event_loop);
             }
             Effect::Run(action) => {
                 self.outcome = Some(action);
@@ -175,15 +215,18 @@ impl App<'_> {
         }
     }
 
-    /// Setelah menu berubah: sesuaikan ukuran bila jumlah baris berubah, lalu gambar.
-    fn changed(&mut self) {
+    /// Setelah menu berubah: sesuaikan tata letak (ukuran, font), lalu gambar.
+    fn refresh(&mut self, event_loop: &ActiveEventLoop) {
         let Some(mut gfx) = self.gfx.take() else {
             return;
         };
-        if gfx.layout.rows.len() != self.menu.rows().len() {
-            self.fit(&mut gfx);
+        match self.fit(&mut gfx, false) {
+            Ok(()) => gfx.window.request_redraw(),
+            Err(error) => {
+                self.error = Some(error);
+                event_loop.exit();
+            }
         }
-        gfx.window.request_redraw();
         self.gfx = Some(gfx);
     }
 
@@ -205,6 +248,7 @@ impl App<'_> {
             size.height,
             &gfx.layout,
             &self.menu,
+            &mut gfx.text,
         );
         buffer.present()?;
         Ok(())
@@ -250,13 +294,7 @@ impl ApplicationHandler for App<'_> {
                     self.apply(input, event_loop);
                 }
             }
-            WindowEvent::ScaleFactorChanged { .. } => {
-                if let Some(mut gfx) = self.gfx.take() {
-                    self.fit(&mut gfx);
-                    gfx.window.request_redraw();
-                    self.gfx = Some(gfx);
-                }
-            }
+            WindowEvent::ScaleFactorChanged { .. } => self.refresh(event_loop),
             WindowEvent::Resized(_) => {
                 if let Some(gfx) = &self.gfx {
                     gfx.window.request_redraw();
