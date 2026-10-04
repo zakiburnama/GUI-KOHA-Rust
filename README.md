@@ -196,6 +196,8 @@ tools/            skrip pengukuran dan pembuat daftar lisensi
 Aturan dependensi: `koha-core` tidak bergantung ke crate lain; `koha-platform` dan `koha-gui`
 bergantung ke `koha-core`; hanya `koha-app` yang mengenal semuanya. Panduan berkontribusi ada
 di [CONTRIBUTING.md](CONTRIBUTING.md), dan riwayat perubahan di [CHANGELOG.md](CHANGELOG.md).
+Cara kerja secara rinci ada di [docs/architecture.md](docs/architecture.md), dan urutan
+pembangunannya di [docs/development-journey.md](docs/development-journey.md).
 
 ## Lisensi
 
