@@ -13,14 +13,14 @@ pub mod window_filter;
 #[cfg(windows)]
 mod win;
 #[cfg(windows)]
-pub use win::{WindowsPlatform, closable_windows};
+pub use win::{WindowsPlatform, attach_parent_console, closable_windows, show_error_dialog};
 #[cfg(windows)]
 pub type SystemPlatform = WindowsPlatform;
 
 #[cfg(not(windows))]
 mod unsupported;
 #[cfg(not(windows))]
-pub use unsupported::UnsupportedPlatform;
+pub use unsupported::{UnsupportedPlatform, attach_parent_console, show_error_dialog};
 #[cfg(not(windows))]
 pub type SystemPlatform = UnsupportedPlatform;
 

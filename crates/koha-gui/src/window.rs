@@ -24,6 +24,7 @@ use crate::input::{FocusGate, KeyAction, map_key};
 use crate::layout::{Layout, centered_position};
 use crate::render::{render, widest_row};
 use crate::text::{TextError, TextRenderer};
+use crate::trace;
 
 #[derive(Debug, Error)]
 pub enum GuiError {
@@ -57,6 +58,7 @@ impl From<SoftBufferError> for GuiError {
 /// (fokus sudah kembali ke aplikasi sebelumnya), tanpa flag "sedang menutup".
 pub fn run(menu: MenuState, on_state: &mut dyn FnMut(&State)) -> Result<Option<Action>, GuiError> {
     let event_loop = EventLoop::new()?;
+    trace::mark("event loop created");
     // `Wait`: tidur sampai ada event. Tidak ada loop sibuk, jadi CPU idle nol.
     event_loop.set_control_flow(ControlFlow::Wait);
 
@@ -68,6 +70,7 @@ pub fn run(menu: MenuState, on_state: &mut dyn FnMut(&State)) -> Result<Option<A
         shift: false,
         outcome: None,
         error: None,
+        first_frame_presented: false,
     };
     event_loop.run_app(&mut app)?;
 
@@ -121,6 +124,8 @@ struct App<'a> {
     shift: bool,
     outcome: Option<Action>,
     error: Option<GuiError>,
+    /// Untuk mencatat jejak "gambar pertama" tepat sekali.
+    first_frame_presented: bool,
 }
 
 impl App<'_> {
@@ -130,7 +135,9 @@ impl App<'_> {
             .or_else(|| event_loop.available_monitors().next());
         let scale = monitor.as_ref().map_or(1.0, MonitorHandle::scale_factor);
         let mut text = TextRenderer::new(&self.menu.theme().font, scale)?;
+        trace::mark("font loaded");
         let layout = compute_layout(&self.menu, &mut text, scale, monitor.as_ref())?;
+        trace::mark("layout computed");
 
         // Dibuat tak terlihat: posisi dan ukuran dibereskan dulu, baru tampil.
         // Ini menghindari jendela muncul sebentar di tempat yang salah (masalah
@@ -149,8 +156,10 @@ impl App<'_> {
         };
 
         let window = Rc::new(event_loop.create_window(attributes)?);
+        trace::mark("window created");
         let context = Context::new(window.clone())?;
         let surface = Surface::new(&context, window.clone())?;
+        trace::mark("surface ready");
 
         let mut gfx = Gfx {
             surface,
@@ -164,6 +173,7 @@ impl App<'_> {
         // posisi awal harus ditetapkan: `force` memaksa keduanya.
         self.fit(&mut gfx, true)?;
         gfx.window.set_visible(true);
+        trace::mark("window shown");
         gfx.window.focus_window();
         gfx.window.request_redraw();
         Ok(gfx)
@@ -251,6 +261,10 @@ impl App<'_> {
             &mut gfx.text,
         );
         buffer.present()?;
+        if !self.first_frame_presented {
+            self.first_frame_presented = true;
+            trace::mark("first frame presented");
+        }
         Ok(())
     }
 }
@@ -260,6 +274,7 @@ impl ApplicationHandler for App<'_> {
         if self.gfx.is_some() {
             return;
         }
+        trace::mark("event loop running");
         match self.create_gfx(event_loop) {
             Ok(gfx) => self.gfx = Some(gfx),
             Err(error) => {

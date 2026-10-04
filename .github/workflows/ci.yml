@@ -24,3 +24,6 @@ jobs:
       - run: cargo fmt --all --check
       - run: cargo clippy --workspace --all-targets -- -D warnings
       - run: cargo test --workspace
+      # Fitur jejak waktu start jarang dipakai; jaga agar tidak membusuk.
+      - run: cargo clippy --workspace --all-targets --features koha-app/startup-trace -- -D warnings
+      - run: cargo test -p koha-gui --features startup-trace

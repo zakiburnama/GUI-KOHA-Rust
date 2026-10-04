@@ -8,6 +8,7 @@ pub mod input;
 pub mod layout;
 pub mod render;
 pub mod text;
+pub mod trace;
 pub mod window;
 
 pub use canvas::Canvas;

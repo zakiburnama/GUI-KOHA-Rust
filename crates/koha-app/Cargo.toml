@@ -21,3 +21,7 @@ thiserror = "2.0.21"
 
 [dev-dependencies]
 tempfile = "3.27.0"
+
+[features]
+# Jejak waktu start; membangun dengan --features startup-trace.
+startup-trace = ["koha-gui/startup-trace"]

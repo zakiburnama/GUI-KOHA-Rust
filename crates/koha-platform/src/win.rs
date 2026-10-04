@@ -9,10 +9,17 @@ use std::ffi::c_void;
 use std::mem::size_of;
 use std::sync::Once;
 
-use windows::Win32::Foundation::{ERROR_CANCELLED, HWND, LPARAM, WPARAM};
+use windows::Win32::Foundation::{ERROR_CANCELLED, GENERIC_WRITE, HWND, LPARAM, WPARAM};
 use windows::Win32::Graphics::Dwm::{DWMWA_CLOAKED, DwmGetWindowAttribute};
+use windows::Win32::Storage::FileSystem::{
+    CreateFileW, FILE_ATTRIBUTE_NORMAL, FILE_SHARE_READ, FILE_SHARE_WRITE, OPEN_EXISTING,
+};
 use windows::Win32::System::Com::{
     COINIT_APARTMENTTHREADED, COINIT_DISABLE_OLE1DDE, CoInitializeEx,
+};
+use windows::Win32::System::Console::{
+    ATTACH_PARENT_PROCESS, AttachConsole, GetConsoleWindow, GetStdHandle, STD_ERROR_HANDLE,
+    STD_HANDLE, STD_OUTPUT_HANDLE, SetStdHandle,
 };
 use windows::Win32::System::Power::SetSuspendState;
 use windows::Win32::System::Shutdown::LockWorkStation;
@@ -22,8 +29,8 @@ use windows::Win32::UI::Shell::{
 };
 use windows::Win32::UI::WindowsAndMessaging::{
     EnumWindows, GW_OWNER, GWL_EXSTYLE, GetClassNameW, GetWindow, GetWindowLongW,
-    GetWindowTextLengthW, GetWindowThreadProcessId, IsWindowVisible, PostMessageW, SW_SHOWNORMAL,
-    WM_CLOSE,
+    GetWindowTextLengthW, GetWindowThreadProcessId, IsWindowVisible, MB_ICONERROR, MB_OK,
+    MB_SETFOREGROUND, MB_TOPMOST, MessageBoxW, PostMessageW, SW_SHOWNORMAL, WM_CLOSE,
 };
 use windows::core::{BOOL, HSTRING, PCWSTR, w};
 
@@ -203,6 +210,86 @@ fn init_com() {
         // SAFETY: `None` untuk parameter cadangan, flag adalah konstanta resmi.
         let _ = unsafe { CoInitializeEx(None, COINIT_APARTMENTTHREADED | COINIT_DISABLE_OLE1DDE) };
     });
+}
+
+/// Menempel ke konsol milik proses induk bila ada. Mengembalikan `true` bila
+/// sekarang ada konsol yang bisa dibaca pengguna.
+///
+/// Binary rilis memakai subsistem GUI (tanpa jendela konsol), jadi bila dijalankan
+/// dari terminal ia tidak punya stdout sendiri dan `--help` atau
+/// `--print-config-path` tidak akan mencetak apa pun. Menempel ke konsol induk
+/// memperbaikinya. Bila dijalankan dari tombol atau pintasan tidak ada konsol
+/// induk, dan hasilnya `false`: pemanggil sebaiknya melaporkan error lewat dialog.
+pub fn attach_parent_console() -> bool {
+    // SAFETY: kedua fungsi tidak menerima pointer dari kita.
+    unsafe {
+        // Sudah punya konsol sendiri (build debug berkonsol): `AttachConsole`
+        // justru akan gagal, jadi tidak perlu dan tidak boleh dipanggil.
+        if !GetConsoleWindow().0.is_null() {
+            return true;
+        }
+        if AttachConsole(ATTACH_PARENT_PROCESS).is_err() {
+            return false;
+        }
+    }
+    ensure_console_output();
+    true
+}
+
+/// Setelah `AttachConsole`, handle stdout/stderr proses GUI bisa masih kosong.
+/// Bila begitu, arahkan ke `CONOUT$`. Handle yang sudah valid (misalnya hasil
+/// `koha --print-config-path > berkas.txt`) dibiarkan agar pengalihan tetap bekerja.
+fn ensure_console_output() {
+    for which in [STD_OUTPUT_HANDLE, STD_ERROR_HANDLE] {
+        if !std_handle_is_usable(which) {
+            // SAFETY: nama berakhiran nol dari `w!`; semua argumen lain adalah
+            // konstanta atau `None`. Handle yang dihasilkan sengaja tidak ditutup:
+            // ia dipakai sampai proses selesai.
+            let console = unsafe {
+                CreateFileW(
+                    w!("CONOUT$"),
+                    GENERIC_WRITE.0,
+                    FILE_SHARE_READ | FILE_SHARE_WRITE,
+                    None,
+                    OPEN_EXISTING,
+                    FILE_ATTRIBUTE_NORMAL,
+                    None,
+                )
+            };
+            if let Ok(console) = console {
+                // SAFETY: `console` adalah handle valid yang baru dibuka.
+                let _ = unsafe { SetStdHandle(which, console) };
+            }
+        }
+    }
+}
+
+fn std_handle_is_usable(which: STD_HANDLE) -> bool {
+    // SAFETY: hanya membaca handle standar proses.
+    match unsafe { GetStdHandle(which) } {
+        Ok(handle) => !handle.is_invalid() && !handle.0.is_null(),
+        Err(_) => false,
+    }
+}
+
+/// Menampilkan dialog error dan menunggu pengguna menekan OK.
+///
+/// Dipakai saat tidak ada konsol (dijalankan dari tombol atau pintasan), karena
+/// pesan ke stderr tidak akan terlihat siapa pun. `MB_TOPMOST` dan
+/// `MB_SETFOREGROUND` membuatnya muncul di depan walau KOHA dipanggil dari tombol.
+pub fn show_error_dialog(title: &str, message: &str) {
+    let title = HSTRING::from(title);
+    let message = HSTRING::from(message);
+    // SAFETY: `message` dan `title` hidup sampai pemanggilan kembali; tanpa jendela
+    // pemilik (`None`).
+    unsafe {
+        MessageBoxW(
+            None,
+            &message,
+            &title,
+            MB_OK | MB_ICONERROR | MB_SETFOREGROUND | MB_TOPMOST,
+        );
+    }
 }
 
 fn failed(operation: &'static str, error: &windows::core::Error) -> PlatformError {

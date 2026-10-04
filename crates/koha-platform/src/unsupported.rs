@@ -7,6 +7,17 @@ use crate::{Platform, PlatformError};
 #[derive(Debug, Default, Clone, Copy)]
 pub struct UnsupportedPlatform;
 
+/// Di OS selain Windows stderr selalu dianggap terlihat (tidak ada pembedaan
+/// subsistem GUI dan konsol), jadi tidak ada yang perlu ditempelkan.
+pub fn attach_parent_console() -> bool {
+    true
+}
+
+/// Padanan `show_error_dialog` Windows: tanpa dialog, cukup ke stderr.
+pub fn show_error_dialog(title: &str, message: &str) {
+    eprintln!("{title}: {message}");
+}
+
 impl Platform for UnsupportedPlatform {
     fn launch(&self, _command: &str, _args: &[String], _admin: bool) -> Result<(), PlatformError> {
         Err(PlatformError::Unsupported("launch"))

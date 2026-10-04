@@ -11,3 +11,7 @@ koha-core.workspace = true
 softbuffer = "0.4.8"
 thiserror = "2.0.21"
 winit = "0.30.13"
+
+[features]
+# Mencetak jejak waktu start ke stderr (lihat `trace.rs`). Mati secara bawaan.
+startup-trace = []
