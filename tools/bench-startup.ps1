@@ -18,6 +18,10 @@
 .PARAMETER Rust
   Jalur koha.exe (Rust). Bawaan: target\release\koha.exe.
 
+.PARAMETER Also
+  Varian Rust tambahan untuk dibandingkan, berbentuk "Nama=jalur\ke\koha.exe" (boleh
+  beberapa). Berguna untuk membandingkan profil rilis.
+
 .PARAMETER Ahk
   Jalur KOHA.exe (AutoHotkey) untuk dibandingkan. Opsional.
 
@@ -48,6 +52,7 @@
 [CmdletBinding()]
 param(
   [string]$Rust,
+  [string[]]$Also = @(),
   [string]$Ahk,
   [int]$Runs = 30,
   [int]$Warmup = 3,
@@ -216,6 +221,14 @@ if ($Trace) {
 # ------------------------------------------------------------ mode perbandingan
 $targets = @()
 $targets += [pscustomobject]@{ Name = 'Rust  koha.exe'; Kind = 'window'; Exe = $Rust; Args = $rustArgs; Values = New-Object System.Collections.Generic.List[double]; First = $null; Failures = 0; LastError = $null }
+# Lewat `powershell -File`, "A=x,B=y" tiba sebagai satu string, bukan larik: pisahkan juga di koma.
+$Also = @($Also | ForEach-Object { $_ -split ',' } | Where-Object { $_ })
+foreach ($entry in $Also) {
+  $name, $path = $entry -split '=', 2
+  if (-not $path) { throw "-Also '$entry': gunakan bentuk Nama=jalur" }
+  $path = Assert-File $path $name
+  $targets += [pscustomobject]@{ Name = "Rust  $name"; Kind = 'window'; Exe = $path; Args = $rustArgs; Values = New-Object System.Collections.Generic.List[double]; First = $null; Failures = 0; LastError = $null }
+}
 if ($Ahk) {
   $ahkPath = Assert-File $Ahk 'KOHA.exe (AHK)'
   $targets += [pscustomobject]@{ Name = 'AHK   KOHA.exe'; Kind = 'window'; Exe = $ahkPath; Args = ''; Values = New-Object System.Collections.Generic.List[double]; First = $null; Failures = 0; LastError = $null }

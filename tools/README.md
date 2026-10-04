@@ -17,6 +17,10 @@ cargo build --release --features startup-trace -p koha-app --target-dir target\t
 .\tools\bench-startup.ps1 -Trace -Rust target\trace\release\koha.exe -Runs 20
 ```
 
+Opsi `-Also "Nama=jalur"` menambahkan varian Rust lain ke perbandingan (mis. profil rilis
+berbeda); beberapa varian dipisah koma. Hasil pengukuran yang sudah ada ada di
+[docs/performance.md](../docs/performance.md).
+
 Hal yang perlu diketahui sebelum mempercayai angkanya:
 
 - Yang diukur adalah **jendela KOHA terlihat**, bukan piksel pertama tergambar dan bukan

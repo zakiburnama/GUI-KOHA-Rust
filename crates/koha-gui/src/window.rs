@@ -172,6 +172,7 @@ impl App<'_> {
         // Skala jendela sebenarnya bisa berbeda dari skala monitor utama, dan
         // posisi awal harus ditetapkan: `force` memaksa keduanya.
         self.fit(&mut gfx, true)?;
+        trace::mark("window fitted");
         gfx.window.set_visible(true);
         trace::mark("window shown");
         gfx.window.focus_window();

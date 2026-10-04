@@ -13,3 +13,19 @@ publish = false
 koha-core = { path = "crates/koha-core" }
 koha-platform = { path = "crates/koha-platform" }
 koha-gui = { path = "crates/koha-gui" }
+
+# Profil rilis, dipilih dari pengukuran (lihat docs/performance.md).
+# - opt-level 3 : waktu start sama dengan profil bawaan, dan ~2 ms lebih cepat
+#                 daripada "z" (yang 20% lebih kecil) pada dua sesi pengukuran.
+# - lto + codegen-units = 1 : binary ~29% lebih kecil dari profil bawaan, tanpa
+#                 menambah waktu start. Harganya waktu build (~100 dtk).
+# - panic = "abort" : tanpa unwinding; panic menghentikan proses. Profil `test`
+#                 tidak terpengaruh.
+# - strip : membuang simbol, jadi backtrace di rilis tidak informatif. Untuk
+#                 debugging pakai build debug, atau CARGO_PROFILE_RELEASE_STRIP=false.
+[profile.release]
+opt-level = 3
+lto = true
+codegen-units = 1
+panic = "abort"
+strip = true
