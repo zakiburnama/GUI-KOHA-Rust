@@ -10,6 +10,8 @@
 //! dilakukan oleh `koha-app`.
 
 pub mod config;
+#[cfg(test)]
+mod docs_examples;
 pub mod menu;
 pub mod rgb;
 pub mod state;
