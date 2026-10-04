@@ -233,7 +233,12 @@ mod tests {
     fn config_with_windows_line_endings_is_loaded() {
         let dir = tempdir().unwrap();
         let path = dir.path().join("config.toml");
-        fs::write(&path, DEFAULT_CONFIG.replace('\n', "\r\n")).unwrap();
+        // Normalkan ke LF dulu: bila repositori di-checkout dengan CRLF (autocrlf di CI
+        // Windows), `DEFAULT_CONFIG` sudah CRLF dan mengganti `\n` langsung menghasilkan
+        // `\r\r\n`, yang ditolak parser TOML.
+        let crlf = DEFAULT_CONFIG.replace("\r\n", "\n").replace('\n', "\r\n");
+        assert!(crlf.contains("\r\n") && !crlf.contains("\r\r"));
+        fs::write(&path, crlf).unwrap();
         assert!(load_config(&path, false).is_ok());
     }
 
