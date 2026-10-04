@@ -34,6 +34,9 @@ Rilis pertama: penulisan ulang KOHA (versi AutoHotkey) dalam Rust. **Hanya Windo
   penempelan ke konsol induk saat dijalankan dari terminal.
 - Profil rilis yang disetel dari pengukuran (LTO, `codegen-units = 1`, `panic = "abort"`,
   `strip`): binary sekitar 1,5 MB.
+- `tools/install-shortcut.ps1`: memasang `koha.exe` ke `%LOCALAPPDATA%\Programs\koha` dan membuat
+  pintasan Start Menu (untuk Lenovo Vantage); menolak build debug dan menolak menimpa pintasan
+  milik program lain.
 - Alat pengembangan: `tools/bench-startup.ps1` dan fitur Cargo `startup-trace` untuk mengukur
   waktu start, serta `tools/gen-third-party.ps1` untuk `THIRD_PARTY_LICENSES.md`.
 - CI (Windows wajib; Ubuntu dan macOS eksperimental), kebijakan `cargo deny`, dan dokumentasi

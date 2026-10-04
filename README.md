@@ -120,28 +120,32 @@ menunggu aplikasi GUI dan hasilnya kosong.
 
 KOHA tidak mendengarkan hotkey sendiri; ia dipanggil oleh sesuatu yang lain. Di laptop
 Lenovo, tombol bisa diatur lewat Lenovo Vantage. Vantage hanya menampilkan aplikasi yang
-terdaftar di Start Menu, jadi buat pintasan lebih dulu:
+terdaftar di Start Menu, jadi KOHA perlu dipasang lebih dulu. Skrip yang disediakan
+melakukannya:
 
 ```powershell
-$exe  = (Resolve-Path .\target\release\koha.exe).Path
-$name = 'KOHA'    # ganti bila sudah ada pintasan bernama KOHA, mis. dari versi AutoHotkey
-$lnk  = Join-Path $env:APPDATA "Microsoft\Windows\Start Menu\Programs\$name.lnk"
-
-$shell    = New-Object -ComObject WScript.Shell
-$shortcut = $shell.CreateShortcut($lnk)
-$shortcut.TargetPath       = $exe
-$shortcut.WorkingDirectory = Split-Path $exe
-$shortcut.Save()
+cargo build --release              # bila belum (di paket rilis, koha.exe sudah ada)
+.\tools\install-shortcut.ps1
 ```
 
+Skrip ini menyalin `koha.exe` ke `%LOCALAPPDATA%\Programs\koha\` (supaya `cargo clean` atau
+membangun ulang tidak merusak pintasan) dan membuat pintasan **KOHA (Rust)** di Start Menu.
+Ia aman dijalankan berulang kali (memperbarui salinannya), menolak memasang build debug
+(yang membuka jendela konsol; itulah yang dipakai `cargo run`), dan menolak menimpa pintasan
+lain yang bernama sama, misalnya `KOHA` milik versi AutoHotkey, kecuali kamu memberi
+`-Force`. Config dan state tidak disentuh. Opsi lain: `-Name` untuk nama pintasan, `-WhatIf`
+untuk melihat apa yang akan dilakukan tanpa melakukannya, dan `-Uninstall` untuk menghapus.
+Tidak butuh hak admin.
+
+Setelah itu, uji dulu tanpa Vantage: tekan tombol Windows, ketik `KOHA (Rust)`, lalu Enter.
 Lalu di Lenovo Vantage: **Device settings → Input → User defined key**, pilih tombolnya, atur
-aksi ke **Open applications and files**, dan pilih KOHA dari daftar. Pintasan menyimpan jalur
-mutlak, jadi buat ulang bila `koha.exe` dipindahkan.
+aksi ke **Open applications and files**, dan pilih **KOHA (Rust)** dari daftar.
 
 > Langkah di Vantage disalin dari dokumentasi versi AutoHotkey dan **belum diuji dengan build
-> Rust ini**; tampilan Vantage bisa berbeda antar versi. Potongan PowerShell di atas sudah
-> diuji (membuat pintasan dengan target yang benar). Alat selain Vantage (misalnya AutoHotkey,
-> PowerToys, atau pintasan keyboard Windows) juga bisa memanggil `koha.exe`.
+> Rust ini**; tampilan Vantage bisa berbeda antar versi. Skrip pemasangannya sudah diuji
+> (semua skenario di folder percobaan, lalu pemasangan nyata dan peluncuran pintasannya lewat
+> shell Windows), tetapi bukan dari tombol Vantage itu sendiri. Alat selain Vantage (misalnya
+> AutoHotkey, PowerToys, atau pintasan keyboard Windows) juga bisa memanggil `koha.exe`.
 
 ## Keterbatasan yang diketahui
 

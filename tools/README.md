@@ -9,6 +9,31 @@ untuk Windows.
 | [gen-third-party.ps1](gen-third-party.ps1) | Menghasilkan `THIRD_PARTY_LICENSES.md` |
 | [package-release.ps1](package-release.ps1) | Mengemas rilis Windows (zip dan checksum) |
 | [release-notes.ps1](release-notes.ps1) | Menyusun catatan rilis dari `CHANGELOG.md` |
+| [install-shortcut.ps1](install-shortcut.ps1) | Memasang `koha.exe` dan pintasan Start Menu (untuk Lenovo Vantage) |
+
+## install-shortcut.ps1
+
+Memasang KOHA untuk pengguna yang menjalankannya, supaya program lain (terutama Lenovo
+Vantage, yang hanya menampilkan program dari Start Menu) bisa memilihnya.
+
+```powershell
+.\tools\install-shortcut.ps1                    # salin koha.exe + buat pintasan "KOHA (Rust)"
+.\tools\install-shortcut.ps1 -WhatIf            # hanya menampilkan apa yang akan dilakukan
+.\tools\install-shortcut.ps1 -Uninstall         # hapus pintasan dan koha.exe terpasang
+.\tools\install-shortcut.ps1 -Name 'KOHA'       # nama lain (menolak menimpa pintasan orang lain)
+```
+
+- `koha.exe` disalin ke `%LOCALAPPDATA%\Programs\koha\` dan salinannya diverifikasi identik;
+  pintasan dibuat di folder Programs milik pengguna di Start Menu lalu dibaca kembali untuk
+  memastikan targetnya benar. Tidak butuh hak admin.
+- Sumbernya dicari di folder paket (`koha.exe` di sebelah `tools\`) lalu di
+  `target\release\koha.exe`; bisa ditentukan dengan `-Source`. **Build debug ditolak**
+  (subsistem konsol: membuka jendela konsol dan lebih lambat).
+- Menolak menimpa pintasan bernama sama yang menunjuk ke program lain (misalnya `KOHA.lnk`
+  milik versi AutoHotkey) kecuali dengan `-Force`, dan menolak memperbarui `koha.exe` yang
+  sedang berjalan.
+- `-Uninstall` hanya menghapus pintasan yang menunjuk ke `koha.exe` terpasang ini. Config dan
+  state tidak pernah disentuh.
 
 ## bench-startup.ps1
 
