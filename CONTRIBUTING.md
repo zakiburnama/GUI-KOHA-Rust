@@ -78,6 +78,15 @@ cargo deny check
   $env:UPDATE_SNAPSHOTS = 1; cargo test -p koha-gui snapshot; Remove-Item Env:UPDATE_SNAPSHOTS
   ```
 
+- **Test harus tahan terhadap akhir baris LF maupun CRLF.** CI Windows mengambil kode dengan
+  CRLF (`core.autocrlf`), sedangkan di banyak mesin berkasnya LF. Berkas teks yang
+  ditanam dengan `include_str!` (misalnya `default_config.toml`) ikut berganti akhir baris.
+  Test yang mengganti `\n` dengan `\r\n` pada teks seperti itu menghasilkan `\r\r\n`, dan
+  pernah gagal hanya di CI. Normalkan dulu ke LF sebelum mengubah, atau bandingkan setelah
+  menormalkan. Untuk mereproduksi di mesinmu:
+  `git -c core.autocrlf=true clone --no-hardlinks . $env:TEMP\koha-crlf`, lalu
+  `cargo test --workspace --no-fail-fast` di sana (`--no-fail-fast` penting: tanpanya
+  Cargo berhenti di target test pertama yang gagal dan menyembunyikan yang lain).
 - **Dokumentasi diuji.** Setiap blok `toml` di `README.md` dan `docs/configuration.md` harus
   berupa config yang valid (blok `toml state` harus berupa state yang valid), semua tautan
   relatif di berkas `.md` harus menunjuk berkas yang ada, dan dokumen konfigurasi harus
@@ -113,6 +122,10 @@ binary sebelum dan sesudah, dan bila perubahannya menyentuh jalur start, ukur de
   mengapa aman.
 - Jangan mengklaim sesuatu terverifikasi bila belum diuji; sebutkan terang-terangan apa yang
   belum (itu juga berlaku untuk deskripsi perubahan).
+
+## Merilis
+
+Langkah membuat rilis ada di [docs/releasing.md](docs/releasing.md).
 
 ## Pesan commit
 

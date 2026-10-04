@@ -8,10 +8,10 @@ Linux dan macOS harus dilanjutkan.
 
 | Bagian | Windows | Linux / macOS |
 |---|---|---|
-| Logika (`koha-core`: config, menu, tema, state) | Berjalan, diuji | Tidak punya kode OS; seharusnya berjalan sama (belum dicoba) |
-| Tata letak, teks, dan render (`koha-gui`: `layout`, `render`, `text`, `canvas`) | Berjalan, diuji | Tidak punya kode OS; belum dicoba |
-| Jendela popup (`koha-gui/src/window.rs`) | Berjalan, diuji | **Belum dicoba** (lihat "Jendela" di bawah) |
-| Lokasi config dan state (`koha-app/src/paths.rs`) | Berjalan, diuji | Memakai crate `directories`; lokasi per OS ada di tabel bawah, belum dicoba |
+| Logika (`koha-core`: config, menu, tema, state) | Berjalan, diuji | Tidak punya kode OS; terkompilasi dan tes unitnya lolos di CI |
+| Tata letak, teks, dan render (`koha-gui`: `layout`, `render`, `text`, `canvas`) | Berjalan, diuji | Tidak punya kode OS; terkompilasi dan tes unitnya lolos di CI |
+| Jendela popup (`koha-gui/src/window.rs`) | Berjalan, diuji | Terkompilasi di CI, **belum pernah dijalankan** (lihat "Jendela" di bawah) |
+| Lokasi config dan state (`koha-app/src/paths.rs`) | Berjalan, diuji | Memakai crate `directories`; terkompilasi dan tesnya lolos di CI, tetapi lokasi sebenarnya (tabel bawah) belum diverifikasi di mesin sungguhan |
 | Aksi (`koha-platform`) | Berjalan | Semua aksi mengembalikan `Unsupported` |
 
 Artinya, di Linux atau macOS menu bisa ditampilkan (kalau jendelanya berjalan),
@@ -24,12 +24,20 @@ tetapi memilih aksi apa pun menghasilkan pesan `operasi "..." belum didukung di 
 komentar di `koha-platform/src/win.rs` dan di `default_config.toml`), jadi tidak
 ada di config contoh. `exec` dengan `admin = true` (UAC) diuji manual oleh pemilik.
 
-### Yang belum pernah dijalankan di mana pun
+### Yang sudah dibuktikan CI, dan yang belum
 
-- **CI GitHub Actions** (`.github/workflows/ci.yml`, matriks Windows, Ubuntu, macOS)
-  ditulis tetapi belum pernah dijalankan. Langkah pertama yang masuk akal untuk OS
-  lain: push, lihat apa yang gagal di job Ubuntu dan macOS, dan perbaiki dari sana.
-- **Kompilasi silang** (`cargo check --target ...`) belum pernah dicoba.
+CI GitHub Actions (`.github/workflows/ci.yml`) sudah dijalankan. Pada run untuk commit
+`120e651`, job `check (ubuntu-latest)` dan `check (macos-latest)` **lolos semua langkahnya**:
+`cargo fmt`, `cargo clippy -D warnings`, `cargo test --workspace` (termasuk tes
+`UnsupportedPlatform` yang hanya dikompilasi di OS non-Windows), dan varian fitur
+`startup-trace`. Jadi di Linux dan macOS, **kode terkompilasi dan tes unitnya lolos**.
+
+Yang **belum** dibuktikan: bahwa jendelanya benar-benar tampil dan bekerja. Tidak ada tes
+yang membuka jendela, dan tidak ada yang pernah menjalankan `koha` di Linux atau macOS.
+
+Pada run yang sama job Windows gagal di `cargo test` karena satu tes yang tidak tahan
+terhadap akhir baris CRLF di checkout CI (sudah diperbaiki; lihat
+[releasing.md](releasing.md#pelajaran-dari-ci)).
 
 ## Di mana melanjutkan
 
@@ -133,8 +141,10 @@ khusus-OS.
 
 ## Cara memeriksa dari Windows tanpa perangkat lain
 
-Belum pernah dijalankan. Kompilasi silang hanya memeriksa bahwa kode **terkompilasi**,
-bukan bahwa ia **bekerja**:
+CI Ubuntu dan macOS sudah memeriksa kompilasi tiap kali kamu push. Perintah di bawah hanya
+berguna untuk memeriksa lebih cepat sebelum push (belum pernah dijalankan di mesin
+pengembangan). Kompilasi silang hanya memeriksa bahwa kode **terkompilasi**, bukan bahwa ia
+**bekerja**:
 
 ```bash
 rustup target add x86_64-unknown-linux-gnu aarch64-apple-darwin

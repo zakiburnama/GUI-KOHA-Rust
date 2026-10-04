@@ -145,8 +145,9 @@ mutlak, jadi buat ulang bila `koha.exe` dipindahkan.
 
 ## Keterbatasan yang diketahui
 
-- **Hanya Windows.** Di OS lain menu bisa muncul (belum dicoba), tetapi semua aksi
-  mengembalikan "belum didukung".
+- **Hanya Windows.** Di Linux dan macOS kodenya terkompilasi dan tes unitnya lolos di CI,
+  tetapi jendelanya belum pernah dijalankan di sana, dan semua aksi mengembalikan
+  "belum didukung".
 - **`sleep` tidak bekerja di PC Modern Standby tanpa hibernasi** (periksa dengan
   `powercfg /a`); API Windows yang dipakai dirancang untuk tidur klasik. Karena itu `sleep`
   tidak ada di config contoh.

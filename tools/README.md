@@ -8,6 +8,7 @@ untuk Windows.
 | [bench-startup.ps1](bench-startup.ps1) | Mengukur waktu start KOHA |
 | [gen-third-party.ps1](gen-third-party.ps1) | Menghasilkan `THIRD_PARTY_LICENSES.md` |
 | [package-release.ps1](package-release.ps1) | Mengemas rilis Windows (zip dan checksum) |
+| [release-notes.ps1](release-notes.ps1) | Menyusun catatan rilis dari `CHANGELOG.md` |
 
 ## bench-startup.ps1
 
@@ -107,3 +108,19 @@ Hal yang perlu diketahui:
   tidak berubah, bukan bahwa orang lain bisa membangun berkas identik.
 - Paket dari working tree kotor atau dengan `-IncludeUncommitted` bernama `...-dryrun` dan
   `BUILD_INFO.txt`-nya menyatakan itu bukan rilis.
+
+Langkah lengkap membuat rilis ada di [docs/releasing.md](../docs/releasing.md).
+
+## release-notes.ps1
+
+Mengambil bagian `## [<versi>]` dari `CHANGELOG.md` dan menyusunnya menjadi catatan rilis
+GitHub: pembuka singkat, SHA-256 paket (dibaca dari berkas `.sha256` di `dist\`, atau dari
+`-Zip`), dan tautan relatif yang diubah menjadi tautan absolut ke tag rilis (catatan rilis
+GitHub tidak punya konteks repositori). Skrip ini tidak menerbitkan apa pun.
+
+```powershell
+.\tools\release-notes.ps1 -Version 0.1.0 -OutFile dist\RELEASE_NOTES.md
+```
+
+Ia memperingatkan bila `CHANGELOG.md` belum menanggali versi itu, dan gagal bila versinya
+tidak ada di `CHANGELOG.md`.
