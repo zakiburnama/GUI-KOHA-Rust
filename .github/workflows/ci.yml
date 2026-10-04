@@ -9,12 +9,21 @@ env:
 
 jobs:
   check:
-    name: ${{ matrix.os }}
+    name: check (${{ matrix.os }})
     runs-on: ${{ matrix.os }}
+    # Hanya Windows yang dikerjakan dan diuji. Linux dan macOS belum didukung
+    # (lihat docs/platforms.md): hasilnya informatif dan tidak memblokir.
+    continue-on-error: ${{ matrix.experimental }}
     strategy:
       fail-fast: false
       matrix:
-        os: [windows-latest, ubuntu-latest, macos-latest]
+        include:
+          - os: windows-latest
+            experimental: false
+          - os: ubuntu-latest
+            experimental: true
+          - os: macos-latest
+            experimental: true
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
@@ -27,3 +36,15 @@ jobs:
       # Fitur jejak waktu start jarang dipakai; jaga agar tidak membusuk.
       - run: cargo clippy --workspace --all-targets --features koha-app/startup-trace -- -D warnings
       - run: cargo test -p koha-gui --features startup-trace
+      # Daftar lisensi pihak ketiga harus mengikuti Cargo.lock.
+      - name: THIRD_PARTY_LICENSES.md mutakhir
+        if: runner.os == 'Windows'
+        shell: powershell
+        run: ./tools/gen-third-party.ps1 -Check
+
+  # Lisensi, advisory keamanan (RustSec), sumber, dan versi ganda; aturannya di deny.toml.
+  deny:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: EmbarkStudios/cargo-deny-action@v2

@@ -1,1 +1,6 @@
 /target
+
+/RUST_REWRITE.md
+
+# Hasil pengemasan rilis (tools/package-release.ps1).
+/dist

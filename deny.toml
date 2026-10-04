@@ -1,0 +1,60 @@
+# Konfigurasi cargo-deny: lisensi, advisory keamanan, sumber, dan versi ganda.
+# Jalankan: cargo deny check
+# Dokumentasi: https://embarkstudios.github.io/cargo-deny/
+
+[graph]
+# Semua target dicek, bukan hanya Windows, supaya OS lain yang dikerjakan nanti
+# (lihat docs/platforms.md) tidak membawa lisensi yang tidak kita duga.
+all-features = false
+
+[advisories]
+# Basis data RustSec. Advisory yang sengaja diabaikan ditulis di sini, masing-masing
+# dengan alasannya.
+ignore = [
+    { id = "RUSTSEC-2026-0192", reason = """
+`ttf-parser` tidak lagi dipelihara (bukan kerentanan yang diketahui), dan tidak ada
+versi pengganti langsung: `fontdue` memakainya di dalam. Paparannya kecil karena
+`ttf-parser` hanya membaca tiga font bawaan yang ditanam saat kompilasi
+(crates/koha-gui/assets/fonts); `font` di config hanya menamai font bawaan, tidak
+pernah menunjuk berkas, jadi tidak ada font dari pengguna yang sampai ke sana.
+TINJAU ULANG bila: ada fitur memuat font dari berkas, `fontdue` berpindah dari
+`ttf-parser`, atau muncul advisory keamanan sungguhan untuk `ttf-parser`. Alternatif
+yang disarankan RustSec: `skrifa` (butuh penulisan ulang crates/koha-gui/src/text.rs).
+""" },
+]
+
+[licenses]
+# Lisensi dependensi yang kita terima. Ekspresi "A OR B" lolos bila salah satunya ada
+# di daftar ini (itu sebabnya LGPL pada `r-efi`, yang ditawarkan sebagai salah satu
+# pilihan di samping MIT, tidak perlu diizinkan).
+allow = [
+    "MIT",
+    "Apache-2.0",
+    "Apache-2.0 WITH LLVM-exception",
+    "Zlib",
+    "BSD-2-Clause",
+    "BSD-3-Clause",
+    "ISC",
+    "Unicode-3.0",
+    "Unlicense",
+    # Copyleft lemah per berkas. Dipakai tanpa dimodifikasi oleh `option-ext`
+    # (lewat `directories`); sumbernya tercantum di THIRD_PARTY_LICENSES.md.
+    "MPL-2.0",
+]
+confidence-threshold = 0.8
+
+[licenses.private]
+# Crate internal `koha-*` (publish = false) belum punya lisensi dan tidak dihitung.
+ignore = true
+
+[bans]
+# Beberapa versi ganda tidak terhindarkan (syn 2 dan 3, thiserror 1 dan 2, ...);
+# cukup diperingatkan, bukan ditolak.
+multiple-versions = "warn"
+wildcards = "allow"
+
+[sources]
+unknown-registry = "deny"
+unknown-git = "deny"
+allow-registry = ["https://github.com/rust-lang/crates.io-index"]
+allow-git = []
