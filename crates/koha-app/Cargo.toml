@@ -15,3 +15,9 @@ koha-core.workspace = true
 koha-platform.workspace = true
 koha-gui.workspace = true
 anyhow = "1.0.104"
+clap = { version = "4.6.7", default-features = false, features = ["derive", "std", "help", "usage", "error-context"] }
+directories = "6.0.0"
+thiserror = "2.0.21"
+
+[dev-dependencies]
+tempfile = "3.27.0"

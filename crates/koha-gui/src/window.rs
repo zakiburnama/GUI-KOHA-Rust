@@ -288,9 +288,12 @@ impl ApplicationHandler for App<'_> {
                         repeat,
                         ..
                     },
+                is_synthetic,
                 ..
             } => {
-                if let KeyAction::Send(input) = map_key(&logical_key, self.shift, repeat) {
+                if let KeyAction::Send(input) =
+                    map_key(&logical_key, self.shift, repeat, is_synthetic)
+                {
                     self.apply(input, event_loop);
                 }
             }
