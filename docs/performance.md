@@ -101,7 +101,11 @@ Cara membaca:
   pemindaian antivirus atas berkas yang belum pernah dijalankan; itu belum dibuktikan
   (antivirus tidak dimatikan atau diperiksa). Yang belum diketahui: apakah pengguna yang
   memasang `koha.exe` hasil rilis (tanpa tanda tangan digital) akan mengalami hal yang
-  sama pada peluncuran pertamanya. Kemungkinan besar ya.
+  sama pada peluncuran pertamanya. Kemungkinan besar ya. **Satu pengamatan tambahan
+  (langkah 9c)** memperlemah dugaan itu: `koha.exe` yang baru dibongkar dari zip rilis
+  diluncurkan pertama kali dalam 52 ms, tidak lambat. Itu satu pengukuran, jadi belum
+  menjelaskan apa pun, tetapi lambatnya peluncuran pertama tampaknya bukan sifat semua
+  berkas baru; mungkin hanya berkas yang baru saja di-*link* oleh kompilator.
 
 ### Rincian di dalam KOHA (varian B, median 30 putaran, dari awal `main`)
 
