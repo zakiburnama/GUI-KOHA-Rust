@@ -40,16 +40,21 @@ type = "builtin"
 name = "lock"
 
 [[menu]]
-id = "sleep"
-label = "Sleep"
-type = "builtin"
-name = "sleep"
-
-[[menu]]
 id = "close-all-windows"
 label = "Close All Windows"
 type = "builtin"
 name = "close_all_windows"
+
+# Sleep is not in the default menu: the "sleep" builtin uses the classic Windows
+# suspend call, which does nothing on PCs that only support Modern Standby
+# (check with `powercfg /a`). It works on PCs with classic sleep (S3) or
+# hibernation. Uncomment to try it:
+#
+# [[menu]]
+# id = "sleep"
+# label = "Sleep"
+# type = "builtin"
+# name = "sleep"
 
 # Run any program. "args" and "admin" are optional (admin asks for elevation).
 # Uncomment and adjust to try it:

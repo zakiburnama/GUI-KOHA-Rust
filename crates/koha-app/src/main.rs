@@ -8,6 +8,7 @@ use std::process::ExitCode;
 use anyhow::{Context, Result};
 use clap::Parser;
 use koha_core::{MenuState, State};
+use koha_platform::PlatformError;
 
 use crate::cli::Cli;
 use crate::paths::{Dirs, Env};
@@ -79,9 +80,15 @@ fn run() -> Result<ExitCode> {
         }
     };
 
+    // `run` baru kembali setelah jendela dihancurkan, jadi aksi di bawah ini
+    // dijalankan sesudah fokus kembali ke aplikasi sebelumnya.
     if let Some(action) = koha_gui::run(menu, &mut on_state)? {
-        // Menjalankan aksi sungguhan menyusul di langkah 6.
-        println!("aksi dipilih: {action:?}");
+        let platform = koha_platform::SystemPlatform::default();
+        match koha_platform::execute(&platform, &action) {
+            // Pengguna menolak prompt UAC: pilihannya sendiri, bukan error.
+            Ok(()) | Err(PlatformError::Cancelled) => {}
+            Err(error) => return Err(error.into()),
+        }
     }
     Ok(ExitCode::SUCCESS)
 }

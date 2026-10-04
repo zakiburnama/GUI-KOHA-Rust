@@ -728,7 +728,7 @@ type = "submenu"
     }
 
     #[test]
-    fn default_config_offers_theme_picker_and_the_three_system_builtins() {
+    fn default_config_offers_theme_picker_lock_and_close_all_windows() {
         let config = parse(DEFAULT_CONFIG).unwrap();
         let builtins: Vec<Builtin> = config
             .menu
@@ -741,11 +741,17 @@ type = "submenu"
         for expected in [
             Builtin::ThemePicker,
             Builtin::Lock,
-            Builtin::Sleep,
             Builtin::CloseAllWindows,
         ] {
             assert!(builtins.contains(&expected), "{expected:?} hilang");
         }
+    }
+
+    #[test]
+    fn default_config_does_not_ship_the_sleep_item_enabled() {
+        // "sleep" tidak bekerja di PC yang hanya punya Modern Standby.
+        let config = parse(DEFAULT_CONFIG).unwrap();
+        assert!(config.menu.iter().all(|item| item.id != "sleep"));
     }
 
     #[test]
@@ -769,6 +775,7 @@ type = "submenu"
             .join("\n");
         let config = parse(&uncommented).unwrap();
         assert!(config.menu.iter().any(|item| item.id == "terminal-admin"));
+        assert!(config.menu.iter().any(|item| item.id == "sleep"));
         assert!(config.themes.get("my-theme").is_some());
     }
 
